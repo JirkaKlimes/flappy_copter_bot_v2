@@ -15,7 +15,7 @@ class Game:
         SIZE = 18
         COLOR = (252, 239, 61)
 
-        JUMP_STRENGTH = [4, 20]
+        JUMP_STRENGTH = [3, 14]
 
         def __init__(self, game):
             self.vel = [0, 0]
@@ -77,6 +77,37 @@ class Game:
 
             pg.draw.circle(self.game.screen, self.COLOR, self.pos, self.SIZE // 2)
             return ofset
+        
+        def get_obstacles(self):
+            bellow_blocks = []
+            if self.game.blocks.blocks[0][1] > self.pos[1]:
+                bellow_blocks = self.game.blocks.blocks[0:2]
+            else: bellow_blocks = [[0, self.game.RESOLUTION[1]], self.game.RESOLUTION]
+            if bellow_blocks[0][1] > bellow_blocks[1][1]:
+                bellow_block_right = bellow_blocks[0]
+                bellow_block_left = bellow_blocks[1]
+            else:
+                bellow_block_right = bellow_blocks[1]
+                bellow_block_left = bellow_blocks[0]
+
+            above_blocks = []
+            if self.game.blocks.blocks[0][1] < self.game.players[0].pos[1]:
+                above_blocks = self.game.blocks.blocks[0:2]
+            elif self.game.blocks.blocks[3][1] < self.game.players[0].pos[1]:
+                above_blocks = self.game.blocks.blocks[2:4]
+            else: above_blocks = [[0, 0], [0, self.game.RESOLUTION[0]]]
+            if above_blocks[0][1] > above_blocks[1][1]:
+                above_block_right = above_blocks[0]
+                above_block_left = above_blocks[1]
+            else:
+                above_block_right = above_blocks[1]
+                above_block_left = above_blocks[0]
+            
+            if self.game.pipes.lower_pipes_pos[1] < self.pos[1]:
+                above_pipes = self.game.pipes.lower_pipes_pos
+            else: above_pipes = self.game.pipes.upper_pipes_pos
+            
+            return bellow_block_right, bellow_block_left, above_block_right, above_block_left, above_pipes
 
     class Pipes:
         COLOR = (137, 176, 81)
@@ -163,10 +194,11 @@ class Game:
                     self.create_blocks(2)
                     self.blocks = self.blocks[2:]
                 if self.new_block_buffer: self.new_block_buffer = False
+            self.blocks.sort(key=lambda x: x[1], reverse=True)
 
     RESOLUTION = (350, 500)
     FPS =  60
-    GRAVITY = 1.65
+    GRAVITY = 0.8
     BACKGROUND = (0, 136, 146)
     TOP_BOUND = 300
     HELPER_LINES = True
@@ -215,15 +247,7 @@ class Game:
         if score > self.high_score:
             self.high_score = score
 
-        ########
-        # testing
-        if self.players[0].dead:
-            print(f'High Score: {self.high_score}')
-            self.restart(1)
-        ########
-
-        score_text = self.FONT.render(str(score), True, (255, 255, 255))
-        self.screen.blit(score_text, (0, 0))
+        pg.draw.circle(self.screen, (0, 0, 255), self.best_player.pos, self.best_player.SIZE//2, 2)
 
         if self.HELPER_LINES: 
             pg.draw.line(self.screen, (0, 255, 255), (0, self.TOP_BOUND-self.players[0].SIZE//2), (self.RESOLUTION[0], self.TOP_BOUND-self.players[0].SIZE//2), 1)
@@ -238,44 +262,3 @@ class Game:
         pg.display.flip()
         self.clock.tick(self.FPS)
 
-game = Game()
-
-game.restart(1)
-
-while True:
-
-    game.update()
-
-    #########
-    # AI HERE
-
-    below_block_left = [0, game.RESOLUTION[1]]
-    below_block_right = game.RESOLUTION
-    above_block_left = [0, 0]
-    above_block_right = [game.RESOLUTION[0], 0]
-
-    pg.draw.aaline(game.screen, (0, 0, 255), above_block_right, game.best_player.pos)
-    pg.draw.aaline(game.screen, (0, 0, 255), above_block_left, game.best_player.pos)
-    pg.draw.aaline(game.screen, (255, 0, 0), below_block_right, game.best_player.pos)
-    pg.draw.aaline(game.screen, (255, 0, 0), below_block_left, game.best_player.pos)
-
-    if game.pipes.lower_pipes_pos[1] < game.best_player.pos[1]:
-        above_pipes = game.pipes.lower_pipes_pos
-    else: above_pipes = game.pipes.upper_pipes_pos
-
-    pg.draw.aaline(game.screen, (0, 255, 0), above_pipes, game.best_player.pos)
-
-
-
-    for player in game.players:
-        jump = 0
-        if is_pressed('a'):
-            jump = 1
-        if is_pressed('d'):
-            jump = 2
-        player.set_jump(jump)
-
-    # AI HERE
-    #########
-
-    game.update_screen()
