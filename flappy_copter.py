@@ -26,6 +26,7 @@ class Game:
             self.jump = 0
             self.score = 0
             self.waiting_score_reset = False
+            self.updates = 0
         
         def set_jump(self, jump):
             self.jump = jump
@@ -33,6 +34,7 @@ class Game:
         def update(self, jump=False, ofset=0, new_pipes=False):
             jump = self.jump
             if self.dead: return ofset
+            self.updates += 1
             if new_pipes: self.waiting_score_reset = False
             j = jump
             jump = False if jump == self.last_jump else jump
@@ -63,10 +65,10 @@ class Game:
             if self.pos[1]+self.SIZE/2 > self.game.RESOLUTION[1]:
                 self.dead = True
             
-            for block in self.game.blocks.blocks:
-                dist = sqrt(pow((self.pos[0]-block[0]), 2)+pow((self.pos[1]-block[1]),2))
-                if dist < self.game.blocks.SIZE/2 + self.SIZE/2:
-                    self.dead = True
+            # for block in self.game.blocks.blocks:
+            #     dist = sqrt(pow((self.pos[0]-block[0]), 2)+pow((self.pos[1]-block[1]),2))
+            #     if dist < self.game.blocks.SIZE/2 + self.SIZE/2:
+            #         self.dead = True
 
             if not self.dead and not self.waiting_score_reset:
                 if self.pos[1] < self.game.pipes.lower_pipes_pos[1]:
@@ -262,3 +264,47 @@ class Game:
         pg.display.flip()
         self.clock.tick(self.FPS)
 
+if __name__ == '__main__':
+    game = Game()
+    game.restart(1)
+
+    while True:
+
+        game.update()
+
+        obstacles = game.best_player.get_obstacles()
+        bellow_block_right = obstacles[0]
+        bellow_block_left = obstacles[1]
+        above_block_right = obstacles[2]
+        above_block_left = obstacles[3]
+        above_pipes = obstacles[4]
+
+        pg.draw.aaline(game.screen, (0, 0, 255), above_block_right, game.best_player.pos)
+        pg.draw.aaline(game.screen, (0, 0, 255), above_block_left, game.best_player.pos)
+        pg.draw.aaline(game.screen, (255, 0, 0), bellow_block_right, game.best_player.pos)
+        pg.draw.aaline(game.screen, (255, 0, 0), bellow_block_left, game.best_player.pos)
+
+        pg.draw.aaline(game.screen, (0, 255, 0), above_pipes, game.best_player.pos)
+
+        for player in game.players:
+            obstacles = player.get_obstacles()
+            bellow_block_right = obstacles[0]
+            bellow_block_left = obstacles[1]
+            above_block_right = obstacles[2]
+            above_block_left = obstacles[3]
+            above_pipes = obstacles[4]
+
+            playing = False
+            jump = 0
+            if is_pressed('a'):
+                jump = 1
+            if is_pressed('d'):
+                jump = 2
+            if not player.dead:
+                playing = True
+            player.set_jump(jump)
+            if not playing:
+                game.restart(1)
+                continue
+
+        game.update_screen() 

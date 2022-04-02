@@ -57,6 +57,7 @@ class Layer:
             case self.RELU:
                 self.outputs = np.maximum(0, outputs)
             case self.SOFTMAX:
+                outputs = np.clip(outputs, 1e-8, 1-1e-8)
                 e = np.exp(outputs)
                 e = np.divide(e, np.max(e, axis=1, keepdims=True))
                 self.outputs = np.divide(e, np.sum(e, axis=1, keepdims=True))
@@ -455,10 +456,10 @@ class Population():
         self.mutated_layers = NeuralNetwork.RANDOM
         self.expand = False
 
-        self.vertical_freq = 20
-        self.horizontal_freq = 100
-        self.vertical_chance = 0.5
-        self.horizontal_chance = 0.2
+        self.vertical_freq = 10
+        self.horizontal_freq = 10
+        self.vertical_chance = 0
+        self.horizontal_chance = 0
 
         self.n_layers = 1
 
